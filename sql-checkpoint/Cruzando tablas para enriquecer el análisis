@@ -1,0 +1,95 @@
+-- =========================================================
+-- MÓDULO 5: Consultas con JOINs y UNION ALL
+-- Archivo: m5_consultas_joins.sql
+-- Base de Datos: Ventas_Tech_DB
+-- =========================================================
+
+USE Ventas_Tech_DB;
+GO
+
+-- ---------------------------------------------------------
+-- Consulta 1 — Vista base del proyecto (INNER JOIN)
+-- Cruza ventas con clientes, productos y categorías.
+-- ---------------------------------------------------------
+SELECT 
+    v.fecha_venta,
+    c.nombre AS nombre_cliente,
+    c.email AS email_cliente,
+    p.nombre_producto,
+    cat.nombre_categoria,
+    v.cantidad,
+    v.precio_unitario,
+    (v.cantidad * v.precio_unitario) AS total_venta
+FROM ventas v
+INNER JOIN clientes c ON v.id_cliente = c.id_cliente
+INNER JOIN productos p ON v.id_producto = p.id_producto
+INNER JOIN categorias cat ON p.id_categoria = cat.id_categoria;
+GO
+
+-- ---------------------------------------------------------
+-- Consulta 2 — Clientes sin ventas (LEFT JOIN)
+-- Identifica clientes registrados que aún no compraron.
+-- ---------------------------------------------------------
+SELECT 
+    c.id_cliente,
+    c.nombre AS nombre_cliente,
+    c.email AS email_cliente,
+    c.fecha_registro
+FROM clientes c
+LEFT JOIN ventas v ON c.id_cliente = v.id_cliente
+WHERE v.id_venta IS NULL;
+GO
+
+-- ---------------------------------------------------------
+-- Consulta 3 — Productos sin ventas (LEFT JOIN)
+-- Identifica productos del catálogo sin ventas registradas.
+-- ---------------------------------------------------------
+SELECT 
+    p.id_producto,
+    p.nombre_producto,
+    cat.nombre_categoria,
+    p.precio
+FROM productos p
+LEFT JOIN categorias cat ON p.id_categoria = cat.id_categoria
+LEFT JOIN ventas v ON p.id_producto = v.id_producto
+WHERE v.id_venta IS NULL;
+GO
+
+-- ---------------------------------------------------------
+-- Consulta 4 — Consolidado por canal (UNION ALL)
+-- Simula ventas por canal Online y Presencial y las agrupa.
+-- ---------------------------------------------------------
+SELECT 
+    canal, 
+    SUM(total) AS total_canal
+FROM (
+    SELECT 
+        fecha_venta, 
+        (cantidad * precio_unitario) AS total, 
+        'Online' AS canal
+    FROM ventas 
+    WHERE id_venta % 2 <> 0
+
+    UNION ALL
+
+    SELECT 
+        fecha_venta, 
+        (cantidad * precio_unitario) AS total, 
+        'Presencial' AS canal
+    FROM ventas 
+    WHERE id_venta % 2 = 0
+) AS consolidado
+GROUP BY canal;
+GO
+
+USE Ventas_Tech_DB;
+GO
+
+-- Insertar cliente de prueba sin ventas asociadas
+INSERT INTO clientes (id_cliente, nombre, email, fecha_registro) 
+VALUES (6, 'Lucía Fernández', 'lucia@mail.com', '2024-03-15');
+
+-- Insertar producto de prueba sin ventas asociadas
+INSERT INTO productos (id_producto, nombre_producto, id_categoria, precio) 
+VALUES (6, 'Monitor Gamer 27', 3, 350.00);
+GO
